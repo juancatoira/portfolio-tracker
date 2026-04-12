@@ -4,8 +4,10 @@ import com.portfoliotracker.backend.dto.request.ManualPositionRequest;
 import com.portfoliotracker.backend.dto.request.TransactionRequest;
 import com.portfoliotracker.backend.dto.response.PositionResponse;
 import com.portfoliotracker.backend.dto.response.TransactionResponse;
+import com.portfoliotracker.backend.entity.Coin;
 import com.portfoliotracker.backend.entity.Transaction;
 import com.portfoliotracker.backend.entity.User;
+import com.portfoliotracker.backend.repository.CoinRepository;
 import com.portfoliotracker.backend.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final CoinGeckoService coinGeckoService;
+    private final CoinRepository coinRepository;
 
     public TransactionResponse create(TransactionRequest request, User user) {
         Transaction transaction = Transaction.builder()
@@ -119,6 +122,7 @@ public class TransactionService {
         BigDecimal totalInvested = BigDecimal.ZERO;
         String coinName = "";
         String coinSymbol = "";
+        String imageUrl = "";
 
         // Ordenar por fecha ascendente para calcular PMP correctamente
         transactions.sort(Comparator.comparing(Transaction::getDate));
@@ -126,6 +130,9 @@ public class TransactionService {
         for (Transaction t : transactions) {
             coinName = t.getCoinName();
             coinSymbol = t.getCoinSymbol();
+            imageUrl = coinRepository.findById(coinId)
+                    .map(Coin::getImageUrl)
+                    .orElse("");
 
             if (t.getType() == Transaction.TransactionType.BUY
                     || t.getType() == Transaction.TransactionType.MANUAL) {
@@ -173,6 +180,7 @@ public class TransactionService {
                 .currentValueUsd(currentValue.setScale(2, RoundingMode.HALF_UP))
                 .pnlUsd(pnlUsd.setScale(2, RoundingMode.HALF_UP))
                 .pnlPercent(pnlPercent.setScale(2, RoundingMode.HALF_UP))
+                .imageUrl(imageUrl)
                 .build();
     }
 

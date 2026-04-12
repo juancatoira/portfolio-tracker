@@ -51,6 +51,7 @@ public class Transaction {
     @Column
     private String notes;
 
+
     public enum TransactionType {
         BUY, SELL, MANUAL
     }

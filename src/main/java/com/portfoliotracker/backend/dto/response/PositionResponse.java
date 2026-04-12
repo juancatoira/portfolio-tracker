@@ -11,6 +11,7 @@ public class PositionResponse {
     private String coinId;
     private String coinName;
     private String coinSymbol;
+    private String imageUrl;
     private BigDecimal quantity;
     private BigDecimal averagePriceUsd;   // Precio medio ponderado
     private BigDecimal currentPriceUsd;   // Precio actual de CoinGecko
