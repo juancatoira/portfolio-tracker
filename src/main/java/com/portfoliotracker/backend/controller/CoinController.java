@@ -34,7 +34,7 @@ public class CoinController {
         );
     }
 
-    @PostMapping("/api/coins/sync")
+    @PostMapping("/sync")
     public ResponseEntity<String> syncManual() {
         coinSyncService.sync();
         return ResponseEntity.ok("Sincronización iniciada");
