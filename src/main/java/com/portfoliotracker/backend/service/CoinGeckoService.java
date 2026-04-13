@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class CoinGeckoService {
 
     private static final String BASE_URL = "https://api.coingecko.com/api/v3";
@@ -24,8 +23,8 @@ public class CoinGeckoService {
     public static final String GET_COIN_LIST = "/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1";
     public static final String GET_COIN_LIST_PAGE = "/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page={page}";
 
-    String apiKey;
-    RestClient restClient;
+    private final String apiKey;
+    private final RestClient restClient;
 
     public CoinGeckoService(@Value("${coingecko.api.key}") String apiKey) {
         this.apiKey = apiKey;

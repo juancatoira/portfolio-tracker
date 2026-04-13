@@ -11,4 +11,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByUserIdOrderByDateDesc(UUID userId);
     List<Transaction> findByUserIdAndCoinIdOrderByDateAsc(UUID userId, String coinId);
     Optional<Transaction> findByUserIdAndCoinIdAndType(UUID userId, String coinId, Transaction.TransactionType type);
+    boolean existsByCoinId(String coinId);
 }

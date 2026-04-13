@@ -7,9 +7,12 @@ import com.portfoliotracker.backend.dto.response.TransactionResponse;
 import com.portfoliotracker.backend.entity.Coin;
 import com.portfoliotracker.backend.entity.Transaction;
 import com.portfoliotracker.backend.entity.User;
+import com.portfoliotracker.backend.repository.CoinPriceRepository;
 import com.portfoliotracker.backend.repository.CoinRepository;
 import com.portfoliotracker.backend.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,8 +25,11 @@ import java.util.stream.Collectors;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final CoinGeckoService coinGeckoService;
     private final CoinRepository coinRepository;
+    private final PriceService priceService;
+    private final CoinPriceRepository coinPriceRepository;
+
+    final static Logger log = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionResponse create(TransactionRequest request, User user) {
         Transaction transaction = Transaction.builder()
@@ -59,30 +65,48 @@ public class TransactionService {
             throw new RuntimeException("No tienes permiso para eliminar esta transacción");
         }
 
+        String coinId = transaction.getCoinId();
         transactionRepository.delete(transaction);
+
+        // Si ya no hay transacciones para esta moneda en ningún portfolio
+        // eliminamos el precio cacheado
+        boolean hasMoreTransactions = transactionRepository
+                .existsByCoinId(coinId);
+
+        if (!hasMoreTransactions) {
+            coinPriceRepository.deleteById(coinId);
+
+            log.info("Precio cacheado eliminado para {}", coinId);
+        }
     }
 
     public List<PositionResponse> getPositions(User user) {
         List<Transaction> allTransactions = transactionRepository
                 .findByUserIdOrderByDateDesc(user.getId());
 
-        // Agrupar transacciones por moneda
         Map<String, List<Transaction>> byCoin = allTransactions.stream()
                 .collect(Collectors.groupingBy(Transaction::getCoinId));
 
-        // Obtener precios actuales de todas las monedas en una sola llamada
         List<String> coinIds = new ArrayList<>(byCoin.keySet());
-        Map<String, BigDecimal> currentPrices = coinGeckoService.getPricesUsd(coinIds);
+
+        // Usamos precios cacheados
+        Map<String, BigDecimal> currentPrices = priceService.getCachedPrices(coinIds);
+
+        // Si no hay precios cacheados para alguna moneda, actualizamos
+        List<String> missingPrices = coinIds.stream()
+                .filter(id -> !currentPrices.containsKey(id))
+                .collect(Collectors.toList());
+
+        if (!missingPrices.isEmpty()) {
+            priceService.updatePrices(missingPrices);
+            currentPrices.putAll(priceService.getCachedPrices(missingPrices));
+        }
 
         List<PositionResponse> positions = new ArrayList<>();
-
         for (Map.Entry<String, List<Transaction>> entry : byCoin.entrySet()) {
-            String coinId = entry.getKey();
-            List<Transaction> transactions = entry.getValue();
-
-            PositionResponse position = calculatePosition(coinId, transactions, currentPrices);
-
-            // Solo incluir posiciones con cantidad > 0
+            PositionResponse position = calculatePosition(
+                    entry.getKey(), entry.getValue(), currentPrices
+            );
             if (position != null && position.getQuantity().compareTo(BigDecimal.ZERO) > 0) {
                 positions.add(position);
             }
