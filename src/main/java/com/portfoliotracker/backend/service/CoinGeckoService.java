@@ -2,6 +2,7 @@ package com.portfoliotracker.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -98,5 +99,37 @@ public class CoinGeckoService {
                 .retrieve()
                 .body(new org.springframework.core.ParameterizedTypeReference<>() {});
         return response != null ? response : List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getNews(List<String> coinSymbols) {
+        try {
+            Map<String, Object> response = restClient.get()
+                    .uri("/news?per_page=50&page=1")
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
+
+            if (response == null) return List.of();
+
+            List<Map<String, Object>> allNews = (List<Map<String, Object>>) response.get("data");
+            if (allNews == null) return List.of();
+
+            List<String> upperSymbols = coinSymbols.stream()
+                    .map(String::toUpperCase)
+                    .toList();
+
+            return allNews.stream()
+                    .filter(article -> {
+                        String title = ((String) article.getOrDefault("title", "")).toUpperCase();
+                        String description = ((String) article.getOrDefault("description", "")).toUpperCase();
+                        return upperSymbols.stream()
+                                .anyMatch(s -> title.contains(s) || description.contains(s));
+                    })
+                    .limit(10)
+                    .collect(java.util.stream.Collectors.toList());
+
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }

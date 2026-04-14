@@ -4,6 +4,7 @@ import com.portfoliotracker.backend.entity.CoinPrice;
 import com.portfoliotracker.backend.repository.CoinPriceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +16,20 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PriceService {
 
     private final CoinPriceRepository coinPriceRepository;
     private final CoinGeckoService coinGeckoService;
+    private final SnapshotService snapshotService;
+
+
+    public PriceService(CoinPriceRepository coinPriceRepository,
+                        CoinGeckoService coinGeckoService,
+                        @Lazy SnapshotService snapshotService) {
+        this.coinPriceRepository = coinPriceRepository;
+        this.coinGeckoService = coinGeckoService;
+        this.snapshotService = snapshotService;
+    }
 
     // Cada 4 horas
     @Scheduled(fixedRate = 4 * 60 * 60 * 1000)
@@ -61,6 +71,8 @@ public class PriceService {
         } catch (Exception e) {
             log.error("Error actualizando precios: {}", e.getMessage());
         }
+
+        snapshotService.takeSnapshotsForAllUsers();
     }
 
     public void updatePrices() {
