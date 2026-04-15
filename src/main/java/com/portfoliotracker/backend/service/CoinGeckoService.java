@@ -23,6 +23,7 @@ public class CoinGeckoService {
     public static final String GET_MARKET_DATA = "/coins/markets?vs_currency=usd&ids={ids}&price_change_percentage=7d";
     public static final String GET_COIN_LIST = "/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1";
     public static final String GET_COIN_LIST_PAGE = "/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page={page}";
+    public static final String MARKET_DATA_SPARKLINE = "/coins/markets?vs_currency=usd&ids={ids}&price_change_percentage=7d&sparkline=true";
 
     private final String apiKey;
     private final RestClient restClient;
@@ -80,6 +81,16 @@ public class CoinGeckoService {
                 .retrieve()
                 .body(new org.springframework.core.ParameterizedTypeReference<>() {});
 
+        return response != null ? response : List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getMarketDataWithSparkline(List<String> coinIds) {
+        String ids = String.join(",", coinIds);
+        List<Map<String, Object>> response = restClient.get()
+                .uri(BASE_URL + MARKET_DATA_SPARKLINE, ids)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
         return response != null ? response : List.of();
     }
 
