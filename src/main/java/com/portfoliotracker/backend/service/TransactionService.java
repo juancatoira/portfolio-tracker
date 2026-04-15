@@ -52,7 +52,6 @@ public class TransactionService {
         return transactionRepository
                 .findByUserIdOrderByDateDesc(user.getId())
                 .stream()
-                .filter(t -> t.getType() != Transaction.TransactionType.MANUAL)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
