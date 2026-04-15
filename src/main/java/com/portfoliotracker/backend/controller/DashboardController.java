@@ -1,6 +1,7 @@
 package com.portfoliotracker.backend.controller;
 
 import com.portfoliotracker.backend.dto.response.PositionResponse;
+import com.portfoliotracker.backend.dto.response.TransactionResponse;
 import com.portfoliotracker.backend.entity.PortfolioSnapshot;
 import com.portfoliotracker.backend.entity.User;
 import com.portfoliotracker.backend.service.CoinGeckoService;
@@ -32,6 +33,13 @@ public class DashboardController {
     private final CoinGeckoService coinGeckoService;
 
     private final RestClient restClient = RestClient.create();
+
+    @GetMapping("/transactions")
+    public ResponseEntity<List<TransactionResponse>> getTransactions(
+            @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(transactionService.getHistory(user));
+    }
 
     @GetMapping("/snapshots")
     public ResponseEntity<List<Map<String, Object>>> getSnapshots(
