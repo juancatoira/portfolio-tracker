@@ -1,6 +1,7 @@
 package com.portfoliotracker.backend.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class CoinGeckoService {
 
     private static final String BASE_URL = "https://api.coingecko.com/api/v3";
@@ -27,6 +29,7 @@ public class CoinGeckoService {
 
     private final String apiKey;
     private final RestClient restClient;
+
 
     public CoinGeckoService(@Value("${coingecko.api.key}") String apiKey) {
         this.apiKey = apiKey;
@@ -141,6 +144,34 @@ public class CoinGeckoService {
 
         } catch (Exception e) {
             return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public BigDecimal getHistoricalPrice(String coinId, String date) {
+        // CoinGecko espera fecha en formato dd-MM-yyyy
+        try {
+            Map<String, Object> response = restClient.get()
+                    .uri("/coins/{id}/history?date={date}&localization=false", coinId, date)
+                    .retrieve()
+                    .body(new org.springframework.core.ParameterizedTypeReference<>() {});
+
+            if (response == null) return null;
+
+            Map<String, Object> marketData = (Map<String, Object>) response.get("market_data");
+            if (marketData == null) return null;
+
+            Map<String, Object> currentPrice = (Map<String, Object>) marketData.get("current_price");
+            if (currentPrice == null) return null;
+
+            Object price = currentPrice.get("usd");
+            if (price instanceof Double d) return BigDecimal.valueOf(d);
+            if (price instanceof Integer i) return BigDecimal.valueOf(i);
+            return null;
+
+        } catch (Exception e) {
+            log.error("Error obteniendo precio histórico para {} en {}: {}", coinId, date, e.getMessage());
+            return null;
         }
     }
 }

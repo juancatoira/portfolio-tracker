@@ -28,6 +28,7 @@ public class TransactionService {
     private final CoinRepository coinRepository;
     private final PriceService priceService;
     private final CoinPriceRepository coinPriceRepository;
+    private final CoinGeckoService coinGeckoService;
 
     final static Logger log = LoggerFactory.getLogger(TransactionService.class);
 

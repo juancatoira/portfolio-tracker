@@ -7,6 +7,7 @@ import com.portfoliotracker.backend.dto.response.TransactionResponse;
 import com.portfoliotracker.backend.entity.Transaction;
 import com.portfoliotracker.backend.entity.User;
 import com.portfoliotracker.backend.repository.TransactionRepository;
+import com.portfoliotracker.backend.service.CoinGeckoService;
 import com.portfoliotracker.backend.service.PriceService;
 import com.portfoliotracker.backend.service.TransactionService;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,8 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final TransactionRepository transactionRepository;
     private final PriceService priceService;
+    private final CoinGeckoService coinGeckoService;
+
     @PostMapping("/transactions")
     public ResponseEntity<TransactionResponse> create(
             @Valid @RequestBody TransactionRequest request,
@@ -92,5 +96,27 @@ public class TransactionController {
         return ResponseEntity.ok(Map.of(
                 "lastUpdated", lastUpdated != null ? lastUpdated.toString() : "never"
         ));
+    }
+
+    @GetMapping("/coins/historical-price")
+    public ResponseEntity<Map<String, Object>> getHistoricalPrice(
+            @RequestParam String coinId,
+            @RequestParam String date
+    ) {
+        try {
+            // Convertir de yyyy-MM-dd a dd-MM-yyyy
+            java.time.LocalDate localDate = java.time.LocalDate.parse(date);
+            String formattedDate = localDate.format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+
+            BigDecimal price = coinGeckoService.getHistoricalPrice(coinId, formattedDate);
+
+            if (price == null) {
+                return ResponseEntity.ok(Map.of("error", "Precio no disponible"));
+            }
+
+            return ResponseEntity.ok(Map.of("price", price));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("error", "Error obteniendo precio"));
+        }
     }
 }
