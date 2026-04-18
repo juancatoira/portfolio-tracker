@@ -40,6 +40,7 @@ public class TransactionService {
                 .type(request.getType())
                 .quantity(request.getQuantity())
                 .priceUsd(request.getPriceUsd())
+                .feeUsd(request.getFeeUsd() != null ? request.getFeeUsd() : BigDecimal.ZERO)
                 .date(request.getDate())
                 .notes(request.getNotes())
                 .build();
@@ -159,16 +160,17 @@ public class TransactionService {
 
             if (t.getType() == Transaction.TransactionType.BUY
                     || t.getType() == Transaction.TransactionType.MANUAL) {
+                BigDecimal fee = t.getFeeUsd() != null ? t.getFeeUsd() : BigDecimal.ZERO;
                 totalInvested = totalInvested.add(
-                        t.getQuantity().multiply(t.getPriceUsd())
+                        t.getQuantity().multiply(t.getPriceUsd()).add(fee)
                 );
                 totalQuantity = totalQuantity.add(t.getQuantity());
             } else {
-                // SELL: reducimos cantidad e inversión proporcionalmente
                 if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal fee = t.getFeeUsd() != null ? t.getFeeUsd() : BigDecimal.ZERO;
                     BigDecimal ratio = t.getQuantity().divide(totalQuantity, 8, RoundingMode.HALF_UP);
                     totalInvested = totalInvested.subtract(
-                            totalInvested.multiply(ratio)
+                            totalInvested.multiply(ratio).subtract(fee)
                     );
                     totalQuantity = totalQuantity.subtract(t.getQuantity());
                 }
@@ -216,6 +218,7 @@ public class TransactionService {
                 .type(t.getType())
                 .quantity(t.getQuantity())
                 .priceUsd(t.getPriceUsd())
+                .feeUsd(t.getFeeUsd() != null ? t.getFeeUsd() : BigDecimal.ZERO)
                 .date(t.getDate())
                 .notes(t.getNotes())
                 .build();

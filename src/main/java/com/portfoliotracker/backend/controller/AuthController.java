@@ -25,4 +25,14 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/demo")
+    public ResponseEntity<AuthResponse> demo() {
+        return ResponseEntity.ok(authService.login(
+                new LoginRequest() {{
+                    setEmail("demo@portfoliotracker.com");
+                    setPassword("demo1234");
+                }}
+        ));
+    }
 }

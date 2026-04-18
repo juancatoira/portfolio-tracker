@@ -20,4 +20,5 @@ public class TransactionResponse {
     private BigDecimal priceUsd;
     private LocalDateTime date;
     private String notes;
+    private BigDecimal feeUsd;
 }

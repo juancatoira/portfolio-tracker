@@ -51,6 +51,8 @@ public class Transaction {
     @Column
     private String notes;
 
+    @Column(precision = 18, scale = 2)
+    private BigDecimal feeUsd;
 
     public enum TransactionType {
         BUY, SELL, MANUAL

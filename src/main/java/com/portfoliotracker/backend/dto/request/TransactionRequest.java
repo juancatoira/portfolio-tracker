@@ -36,4 +36,7 @@ public class TransactionRequest {
     private LocalDateTime date;
 
     private String notes;
+
+    private BigDecimal feeUsd;
+
 }
