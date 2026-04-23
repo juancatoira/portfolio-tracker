@@ -24,6 +24,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column
+    private String username;
+
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -50,6 +53,6 @@ public class User implements UserDetails {
     }
 
     public enum Currency {
-        EUR, USD
+        USD, EUR, GBP, JPY, CHF, CAD, AUD, MXN
     }
 }

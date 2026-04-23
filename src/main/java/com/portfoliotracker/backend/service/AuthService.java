@@ -41,6 +41,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(token)
                 .email(user.getEmail())
+                .username(user.getUsername())
                 .currency(user.getCurrency().name())
                 .build();
     }
@@ -61,6 +62,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(token)
                 .email(user.getEmail())
+                .username(user.getUsername())
                 .currency(user.getCurrency().name())
                 .build();
     }
