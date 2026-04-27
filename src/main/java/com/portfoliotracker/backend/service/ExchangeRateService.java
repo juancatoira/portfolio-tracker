@@ -8,6 +8,8 @@ import org.springframework.core.ParameterizedTypeReference;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.time.LocalDateTime;
@@ -19,7 +21,8 @@ public class ExchangeRateService {
 
     private final RestClient restClient = RestClient.create();
     private final Map<String, BigDecimal> rateCache = new ConcurrentHashMap<>();
-    private LocalDateTime lastUpdated = null;
+    private volatile LocalDateTime lastUpdated = null;
+    private final Object refreshLock = new Object();
 
     private static final Map<String, String> CURRENCY_SYMBOLS = Map.of(
         "USD", "$",
@@ -53,12 +56,24 @@ public class ExchangeRateService {
         return CURRENCY_SYMBOLS;
     }
 
+    public Map<String, BigDecimal> getRates() {
+        ensureFresh();
+        return Collections.unmodifiableMap(new HashMap<>(rateCache));
+    }
+
     private BigDecimal getRate(String currency) {
-        // Refrescamos cada hora
-        if (lastUpdated == null || lastUpdated.isBefore(LocalDateTime.now().minusHours(1))) {
-            refreshRates();
-        }
+        ensureFresh();
         return rateCache.getOrDefault(currency, BigDecimal.ONE);
+    }
+
+    private void ensureFresh() {
+        if (lastUpdated == null || lastUpdated.isBefore(LocalDateTime.now().minusHours(1))) {
+            synchronized (refreshLock) {
+                if (lastUpdated == null || lastUpdated.isBefore(LocalDateTime.now().minusHours(1))) {
+                    refreshRates();
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

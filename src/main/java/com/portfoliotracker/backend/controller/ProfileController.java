@@ -56,7 +56,8 @@ public class ProfileController {
         String currency = user.getCurrency().name();
         return ResponseEntity.ok(Map.of(
                 "currency", currency,
-                "symbol", exchangeRateService.getSymbol(currency)
+                "symbol", exchangeRateService.getSymbol(currency),
+                "rates", exchangeRateService.getRates()
         ));
     }
 }
