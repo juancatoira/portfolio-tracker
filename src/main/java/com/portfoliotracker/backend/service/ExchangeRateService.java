@@ -56,11 +56,6 @@ public class ExchangeRateService {
         return CURRENCY_SYMBOLS;
     }
 
-    public Map<String, BigDecimal> getRates() {
-        ensureFresh();
-        return Collections.unmodifiableMap(new HashMap<>(rateCache));
-    }
-
     private BigDecimal getRate(String currency) {
         ensureFresh();
         return rateCache.getOrDefault(currency, BigDecimal.ONE);
@@ -76,15 +71,30 @@ public class ExchangeRateService {
         }
     }
 
+    public Map<String, Number> getRates() {
+        if (lastUpdated == null || lastUpdated.isBefore(LocalDateTime.now().minusHours(1))) {
+            refreshRates();
+        }
+        Map<String, Number> result = new HashMap<>();
+        rateCache.forEach((k, v) -> result.put(k, v));
+        return result;
+    }
+
     @SuppressWarnings("unchecked")
     private void refreshRates() {
         try {
-            Map<String, Object> response = restClient.get()
-                    .uri("https://api.frankfurter.app/latest?from=USD")
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<>() {});
+            log.info("Actualizando tipos de cambio...");
+
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String url = "https://api.frankfurter.app/latest?from=USD";
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+
+            log.info("Respuesta de Frankfurter: {}", response);
 
             if (response != null && response.containsKey("rates")) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> rates = (Map<String, Object>) response.get("rates");
                 rates.forEach((currency, rate) -> {
                     if (rate instanceof Double d) rateCache.put(currency, BigDecimal.valueOf(d));

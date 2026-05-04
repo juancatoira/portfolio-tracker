@@ -50,14 +50,8 @@ public class ProfileController {
     }
 
     @GetMapping("/exchange-rates")
-    public ResponseEntity<Map<String, Object>> getExchangeRates(
-            @AuthenticationPrincipal User user
-    ) {
-        String currency = user.getCurrency().name();
-        return ResponseEntity.ok(Map.of(
-                "currency", currency,
-                "symbol", exchangeRateService.getSymbol(currency),
-                "rates", exchangeRateService.getRates()
-        ));
+    public ResponseEntity<Map<String, Object>> getExchangeRates() {
+        Map<String, Number> rates = exchangeRateService.getRates();
+        return ResponseEntity.ok(Map.of("rates", rates));
     }
 }
